@@ -1,13 +1,15 @@
 var HashRouter = {
   routes: [],
-  route: function(route, callback) {
-    var route = route.split("/");
+  route: function(pattern, callback) {
+    var pattern = pattern.split("/");
     var routeObj = {};
-    routeObj.route = route;
-    routeObj.callback = callback;
+    routeObj.route = pattern;
+    if (callback) {
+      routeObj.callback = callback; 
+    }
     this.routes.push(routeObj);
   },
-  last: "",
+  last: {},
   current: {},
   view: function(location) {
     if ( location && location != "" ) {
@@ -21,20 +23,31 @@ var HashRouter = {
       for(i=0; i<path.length; ++i) {
         rewrite[i] = path[i];
       }
-      var current = { route: rewrite, query: query, callback: route.callback };
-      if ( this.last != JSON.stringify(current) ) {
-        this.current = current;
-        this.last = JSON.stringify(current);
-        // Find the variable args in the route and pass to the callback.
-        var args = [];
-        for (i=0; i<route.route.length; ++i) {
-          if (route.route[i].indexOf(":") > -1) {
-            args.push(current.route[i]); 
-          }
+      var keyval = route.route.map(function(key, index) {
+        var obj = {};
+        if (key.indexOf(":") > -1) { 
+          key = key.substr(1);
+          obj[key] = rewrite[index];
+          return obj;
+        } else {
+          return key;
         }
-        args.push(current.query);
-        current.callback.apply(this, args);
-        var viewUpdate = new CustomEvent("router:updateview");
+      });
+      this.current = { route: rewrite, keyval: keyval, query: query, callback: route.callback };
+      if ( JSON.stringify(this.last) != JSON.stringify(this.current) ) {
+        this.last = this.current;
+        // Find the variable args in the route and pass to the callback.
+        if (this.current.callback) {
+          var args = [];
+          for (i=0; i<route.route.length; ++i) {
+            if (route.route[i].indexOf(":") > -1) {
+              args.push(this.current.route[i]); 
+            }
+          }
+          args.push(this.current.query);
+          this.current.callback.apply(this, args);
+        }
+        var viewUpdate = new CustomEvent("router:updateview", {detail: this.current});
         window.dispatchEvent(viewUpdate);
       }
     }
@@ -118,7 +131,7 @@ var HashRouter = {
   }
 };
 
-// Registering to listen on events.  These could be removed for custom event listening.
+// Registering to listen on events:
 window.addEventListener("load", function() {
   HashRouter.view();
 });
