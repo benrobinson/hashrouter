@@ -47,7 +47,7 @@ function(there, another, query) {
 
 ## Or, listen for the "router:viewupdate" event and handle route changes based on event data
 
-This event returns a bundle of data about which route was called:
+This event returns a bundle of data about which route was called, so you could create an entirely custom callback handler to listen a registered route is accessed:
 
 ```
 window.addEventListener("router:updateview", function(e) {
