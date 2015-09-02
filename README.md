@@ -47,7 +47,15 @@ function(there, another, query) {
 
 ## Or, listen for the "router:viewupdate" event and handle route changes based on event data
 
-This event returns a bundle of data about which route was called, including its callback function.
+This event returns a bundle of data about which route was called:
+
+```
+window.addEventListener("router:updateview", function(data) {
+  var route = data.detail.route;
+  var query = data.detail.query;
+  var keyval = data.detail.keyval;
+});
+```
 
 ## This is a front end router
 
