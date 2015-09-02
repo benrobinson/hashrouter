@@ -6,10 +6,10 @@ A simple router to handle hash-based routes for front-end applications.
 
 With a separate, named handler function:
 ```
-function view_collection(id) {
+function viewCollection(id) {
   console.log("The collection ID is: " + id);
 }
-HashRouter.route("collection/:id/view", view_collection);
+HashRouter.route("collection/:id/view", viewCollection);
 ```
 
 With an anonymous function 
@@ -50,10 +50,11 @@ function(there, another, query) {
 This event returns a bundle of data about which route was called:
 
 ```
-window.addEventListener("router:updateview", function(data) {
-  var route = data.detail.route;
-  var query = data.detail.query;
-  var keyval = data.detail.keyval;
+window.addEventListener("router:updateview", function(e) {
+  var data = e.detail;
+  var route = data.route;
+  var query = data.query;
+  var keyval = data.keyval;
 });
 ```
 
