@@ -45,6 +45,10 @@ function(there, another, query) {
 }
 ```
 
+## Or, listen for the "router:viewupdate" event and handle route changes based on event data
+
+This event returns a bundle of data about which route was called, including its callback function.
+
 ## This is a front end router
 
 This is router is designed to handle changes after the hash (#).  
