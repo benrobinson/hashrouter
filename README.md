@@ -1,6 +1,6 @@
 # hashrouter
 
-A simple router to handle hash-based routes for front-end applications.
+A simple router to handle routes for front-end applications.
 
 ## Initialize your router object
 
