@@ -5,7 +5,8 @@ A simple router to handle hash-based routes for front-end applications.
 ## Define your routes like:
 
 With a separate, named handler function:
-```
+
+```javascript
 function viewCollection(id) {
   console.log("The collection ID is: " + id);
 }
@@ -13,7 +14,8 @@ HashRouter.route("collection/:id/view", viewCollection);
 ```
 
 With an anonymous function 
-```
+
+```javascript
 HashRouter.route("amount/:id/of/:pie", function(id, pie) {
   var response = "I would eat " + id + " " + pie;
   console.log(response);
@@ -30,7 +32,7 @@ So a structure like:
 
 Should have a callback that takes two arguments: 
 
-```
+```javascript
 function(there, another) { 
   console.log(there + " is " + another); 
 }
@@ -40,7 +42,7 @@ function(there, another) {
 
 Query params are always available as the last arguments passed to your route's function (after any other parameters in the route):
 
-javascript```
+```javascript
 function(there, another, query) { 
   console.log(there + " is " + another);
   console.log(query);
@@ -51,7 +53,7 @@ function(there, another, query) {
 
 This event returns a bundle of data about which route was called, so you could create an entirely custom callback handler to listen for when a registered route is accessed:
 
-```
+```javascript
 window.addEventListener("router:updateview", function(e) {
   var data = e.detail;
   var route = data.route;
