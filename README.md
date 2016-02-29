@@ -77,4 +77,4 @@ If you define a route like:
 
 The full URL to hit that route looks like:
 
-`http://yourdomain.com/#!/structure/something/here/`
+`http://yourdomain.com/#!/structure/ANYTHING/here/`
