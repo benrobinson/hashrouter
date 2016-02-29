@@ -1,146 +1,186 @@
-(function() {
-  var HashRouter = {
-    routes: [],
-    route: function(pattern, callback) {
-      var pattern = pattern.split("/");
-      var routeObj = {};
-      routeObj.route = pattern;
-      if (callback) {
-        routeObj.callback = callback; 
-      }
-      this.routes.push(routeObj);
-    },
-    last: {},
-    current: {},
-    view: function(location) {
-      if ( location && location != "" ) {
-        window.location.hash = "/" + location;
-      }
-      var path = this.getPath();
-      var query = this.getParams();
-      var route = this.findRoute(path);
-      var rewrite = [];
-      if (route) {
-        for(i=0; i<path.length; ++i) {
-          rewrite[i] = path[i];
-        }
-        var keyval = route.route.map(function(key, index) {
-          var obj = {};
-          if (key.indexOf(":") > -1) { 
-            key = key.substr(1);
-            obj[key] = rewrite[index];
-            return obj;
-          } else {
-            return key;
-          }
-        });
-        this.current = { route: rewrite, keyval: keyval, query: query, callback: route.callback };
-        if ( JSON.stringify(this.last) != JSON.stringify(this.current) ) {
-          this.last = this.current;
-          // Find the variable args in the route and pass to the callback.
-          if (this.current.callback) {
-            var args = [];
-            for (i=0; i<route.route.length; ++i) {
-              if (route.route[i].indexOf(":") > -1) {
-                args.push(this.current.route[i]); 
-              }
-            }
-            args.push(this.current.query);
-            this.current.callback.apply(this, args);
-          }
-          var viewUpdate = new CustomEvent("hashrouter:update", {detail: this.current});
-          window.dispatchEvent(viewUpdate);
-        } else {
-          var viewUpdate = new CustomEvent("hashrouter:update", {detail: this.current});
-          window.dispatchEvent(viewUpdate);
-        }
-      }
-    },
-    findRoute: function(incoming) {
-      // Identify relevant routes based on array length
-      var count = incoming.length;
-      var format = [];
-      var possibles = [];
-      var i, n;
-      for (i=0; i<this.routes.length; ++i) {
-        if (this.routes[i].route.length == count) {
-          format.push(this.routes[i].route);
-          possibles.push(this.routes[i]);
-        }
-      }
-      // Identify fixed values
-      var fixeds = [];
-      for (i=0; i<format.length; ++i) {
-        var route = format[i];
-        fixeds[i] = [];
-        for (n=0; n<route.length; ++n) {
-          if (route[n].indexOf(":") == -1) {
-            fixeds[i][n] = route[n];
-          }
-        }
-      }
-      // Boil down to fixed value positions
-      var possible = [];
-      for (i=0; i<fixeds.length; ++i) {
-        possible[i] = [];
-        for(n=0; n<fixeds[i].length; ++n) {
-          var value = fixeds[i][n];
-          if (value) {
-            possible[i][n] = incoming[n];
-          }
-        }
-      }
-      // Crush arrays into strings and compare
-      var pos, comp = "";
-      var correct;
-      for (i=0; i<possible.length; ++i) {
-        pos = possible[i].join();
-        comp = fixeds[i].join();
-        if (pos == comp) {
-          correct = possibles[i];
-        }
-      }
-      // Response to URL change
-      if (correct) {
-        return correct;
-      } else {
-        console.log("No route found for " + incoming.join("/"));
-      }
-    },
-    getParams: function() {
-      if (window.location.hash && window.location.hash.indexOf("?") > -1) {
-        var piece = window.location.hash.split("?");
-        var querystring = piece[1];
-        var pairs = querystring.split("&");
-        var params = {};
-        for (i=0; i<pairs.length; ++i) {
-          var keyval = pairs[i].split("=");
-          params[keyval[0]] = keyval[1];
-        }
-        return params;
-      } else {
-        return {};
-      }
-    },
-    getPath: function() {
-      var full = window.location.hash;
-      var piece = full.split("?");
-      var path = piece[0].substr(2).split("/");
-      for (i=0; i<path.length; ++i) {
-        if (!path[i] || path[i] == "") {
-          path.splice(i, 1);
-        }
-      }
-      return path;
-    }
-  };
-  window.HashRouter = window.HashRouter || HashRouter;
-})();
+/* ============================================
+ *
+ * HashRouter
+ * ----------
+ * A class for front end routing
+ *
+** ============================================ */
 
-// Registering to listen on events:
-window.addEventListener("load", function() {
-  HashRouter.view();
-});
-window.addEventListener("hashchange", function() {
-  HashRouter.view();
-});
+/*
+ * @function HashRouter
+ * @constructor
+**/
+function HashRouter () {
+
+  'use strict';
+
+  // Routes -- none until defined
+  this.routes = {};
+
+  // Initialize lastPath
+  this.lastPath = "";
+
+  // Set up event hooks
+  this.registerEvents();
+} 
+
+/*
+ * @method route
+ * @params {string} pattern, like "item/:id"
+ * @params {function} callback
+**/
+HashRouter.prototype.route = function(pattern, callback) {
+
+  // Find Params
+  var idParams = /:[a-zA-Z0-9]+/g;
+  var params = pattern.match(idParams);
+
+  // Construct the key from the route string
+  var replaceParams = "([^\/]+)";
+  var pattern = pattern.replace(idParams, replaceParams);
+  pattern = pattern.replace(/\//g, "\\\/");
+  pattern = "^\#\!\/" + pattern + "\/?$";
+
+  // Add this route to the routes
+  this.routes[pattern] = callback;
+
+  // Alert the page that a route has loaded.
+  this.notify();
+};
+
+/*
+ * @method view -- visit an established route
+ * @params {string} route
+**/
+HashRouter.prototype.view = function(route) {
+
+  // If a route was passed, push the route to the browser
+  if (route && route != "") {
+    window.history.pushState({route: route}, route, route);
+  }
+
+  // Retrieve a path object
+  var path = this.getPath();
+
+  // Retrieve a query object if a querystring is present
+  if (path.querystring) {        
+    var query = this.getQuery(path.querystring);
+  }
+
+  // Work with the provided route
+  if (path.route) {
+
+    var route = this.getRoute(path.route);
+
+    if ( route ) {
+
+      // Append the query as the last param if present
+      if ( query ) {
+        route.args[route.args.length] = query;
+      }
+
+      // Make sure we're not already on this route
+      if (path.string != this.lastPath) {
+
+        // Record this as the last path
+        this.lastPath = path.string;
+
+        // Follow the route
+        this.followRoute(route);
+      }
+    }
+  }
+};
+
+/*
+ * @method getRoute
+ * @params {string} possible
+ * @returns {object} route
+**/
+HashRouter.prototype.getRoute = function(possible) {
+
+  var pattern, match;
+
+  // Check for a match based on the route's regex hash
+  for ( var route in this.routes ) {
+    pattern = new RegExp(route);
+    match = pattern.exec(possible);
+    if (match && match.length) {
+      match = match.slice(1, match.length);
+      return {action: this.routes[route], args: match};
+    }
+  }
+  return false;
+};
+
+/*
+ * @method followRoute -- fires the route's callback function with provided args
+ * @params {string} route
+**/
+HashRouter.prototype.followRoute = function(route) {
+  route.action.apply(this, route.args);
+  this.notify(route);
+};
+
+/*
+ * @method getPath -- gets the current browser location and splits into a hash and a query
+ * @returns {object} path
+**/
+HashRouter.prototype.getPath = function() {
+  var full = window.location.hash;
+  var piece = full.split("?");
+  var route = piece[0];
+  if (piece.length > 1) {
+    var querystring = piece[1]; 
+  }
+  return {route: route, querystring: querystring, string: window.location.hash};
+};
+
+/*
+ * @method getQuery -- breaks down the query params into an object
+ * @params {string} querystring
+ * @returns {object} query or {boolean} false
+**/
+HashRouter.prototype.getQuery = function(querystring) {
+  if (querystring) {
+    var pairs = querystring.split("&");
+    var params = {};
+    for (i=0; i<pairs.length; ++i) {
+      var keyval = pairs[i].split("=");
+      params[keyval[0]] = keyval[1];
+    }
+    return params;
+  } else {
+    return false;
+  }
+};
+
+/*
+ * @method notify -- fire a "hashrouter:update" event
+ * @params {object} route
+**/
+HashRouter.prototype.notify = function(route) {
+  if (route) {
+    var hashRouterUpdate = new CustomEvent("hashrouter:update", {detail: route});
+    window.dispatchEvent(hashRouterUpdate);
+  } else {
+    var hashRouterLoaded = new CustomEvent("hashrouter:loaded");
+    window.dispatchEvent(hashRouterLoaded);
+  }
+};
+
+/*
+ * @method registerEvents -- listen for change events
+**/
+HashRouter.prototype.registerEvents = function() {
+
+  var self = this;
+
+  window.addEventListener("hashrouter:loaded", function() {
+    self.view();
+  });
+
+  window.addEventListener("hashchange", function() {
+    self.view();
+  });
+}
