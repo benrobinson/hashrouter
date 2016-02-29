@@ -33,9 +33,10 @@ So a structure like:
 Should have a callback that takes two arguments: 
 
 ```javascript
-function(there, another) { 
+function callback(there, another) { 
   console.log(there + " is " + another); 
 }
+Hashrouter.route("here/:there/is/:another/example", callback);
 ```
 
 ### What about query params?
@@ -43,10 +44,11 @@ function(there, another) {
 Query params are always available as the last arguments passed to your route's function (after any other parameters in the route):
 
 ```javascript
-function(there, another, query) { 
+function callback(there, another, query) { 
   console.log(there + " is " + another);
   console.log(query);
 }
+Hashrouter.route("here/:there/is/:another/example", callback);
 ```
 
 ## Or, listen for the "router:viewupdate" event and handle route changes based on event data
