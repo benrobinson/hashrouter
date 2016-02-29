@@ -36,9 +36,11 @@ function(there, another) {
 }
 ```
 
-And if you'd like your route handler to take query parameters, they are always available as the last argument (after any other parameters in the route):
+### What about query params?
 
-```
+Query params are always available as the last arguments passed to your route's function (after any other parameters in the route):
+
+javascript```
 function(there, another, query) { 
   console.log(there + " is " + another);
   console.log(query);
