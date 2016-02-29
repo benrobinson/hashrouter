@@ -2,6 +2,12 @@
 
 A simple router to handle hash-based routes for front-end applications.
 
+## Initialize your router object
+
+```javascript
+var router = new HashRouter();
+```
+
 ## Define your routes like:
 
 With a separate, named handler function:
@@ -10,13 +16,13 @@ With a separate, named handler function:
 function viewCollection(id) {
   console.log("The collection ID is: " + id);
 }
-HashRouter.route("collection/:id/view", viewCollection);
+router.route("collection/:id/view", viewCollection);
 ```
 
 With an anonymous function 
 
 ```javascript
-HashRouter.route("amount/:id/of/:pie", function(id, pie) {
+router.route("amount/:id/of/:pie", function(id, pie) {
   var response = "I would eat " + id + " " + pie;
   console.log(response);
 });
@@ -36,7 +42,7 @@ Should have a callback that takes two arguments:
 function callback(there, another) { 
   console.log(there + " is " + another); 
 }
-Hashrouter.route("here/:there/is/:another/example", callback);
+router.route("here/:there/is/:another/example", callback);
 ```
 
 ### What about query params?
@@ -48,7 +54,7 @@ function callback(there, another, query) {
   console.log(there + " is " + another);
   console.log(query);
 }
-Hashrouter.route("here/:there/is/:another/example", callback);
+router.route("here/:there/is/:another/example", callback);
 ```
 
 ## Or, listen for the "router:viewupdate" event and handle route changes based on event data
@@ -56,22 +62,19 @@ Hashrouter.route("here/:there/is/:another/example", callback);
 This event returns a bundle of data about which route was called, so you could create an entirely custom callback handler to listen for when a registered route is accessed:
 
 ```javascript
-window.addEventListener("router:updateview", function(e) {
-  var data = e.detail;
-  var route = data.route;
-  var query = data.query;
-  var keyval = data.keyval;
+window.addEventListener("hashrouter:update", function(e) {
+  var route = e.detail;
 });
 ```
 
 ## This is a front end router
 
-This is router is designed to handle changes after the hash (#).  
+This is router is designed to handle changes after the hashbang (#!).  
 
 If you define a route like:
 
-`HashRouter.route("structure/:dosomething/here", function(dosomething) { ... });`
+`router.route("structure/:dosomething/here", function(dosomething) { ... });`
 
 The full URL to hit that route looks like:
 
-`http://yourdomain.com/#/structure/something/here/`
+`http://yourdomain.com/#!/structure/something/here/`
